@@ -17,7 +17,7 @@
     "react": "19.1.0",
     "react-native": "0.81.5",
     "react-native-safe-area-context": "^4.9.0",
-    "react-native-screens": "^3.29.0"
+    "react-native-screens": "^3.28.0"
   },
   "private": true
 }
