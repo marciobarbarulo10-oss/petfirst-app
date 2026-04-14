@@ -55,19 +55,34 @@ Estratégia: 100% gratuito no lançamento, monetização via assinatura depois.
 
 ## Estado atual do navegador (App.js)
 ```
-Welcome → CadastroEspecie → CadastroNome
+Stack (onboarding):
+  Welcome → CadastroEspecie → CadastroNome → MainTabs
+
+MainTabs (bottom tab navigator):
+  Home | Saúde | Alimentação | Assistente | Perfil
 ```
-Todas as telas usam `headerShown: false`.
+Todas as telas usam `headerShown: false`. O `MainTabs` recebe `petName` e `petEspecie` via `route.params` e repassa como `initialParams` para cada aba.
 
 ## Telas já criadas
-- **WelcomeScreen** (`screens/WelcomeScreen.js`) — tela de boas-vindas com lista de features e botão CTA
-- **CadastroEspecieScreen** (`screens/CadastroEspecieScreen.js`) — grid de seleção de espécie (passo 1/3)
-- **CadastroNomeScreen** (`screens/CadastroNomeScreen.js`) — input do nome do pet com preview (passo 2/3)
 
-## Próximas telas a criar
-- **HomeScreen** — dashboard principal com perfil do pet cadastrado
-- **SaudeScreen** — carteirinha digital de vacinas
-- **AssistenteScreen** — chat com IA (requer OpenAI API)
+### Onboarding (Stack Navigator)
+- **WelcomeScreen** (`screens/WelcomeScreen.js`) — boas-vindas com lista de features e CTA
+- **CadastroEspecieScreen** (`screens/CadastroEspecieScreen.js`) — grid de seleção de espécie (passo 1/3, barra de progresso 33%)
+- **CadastroNomeScreen** (`screens/CadastroNomeScreen.js`) — input do nome do pet com preview (passo 2/3, barra de progresso 66%); navega para `MainTabs` passando `petName` e `petEspecie`
+
+### Navegação principal (Bottom Tab Navigator)
+- **MainTabs** (`screens/MainTabs.js`) — bottom tab navigator com 5 abas; ícones em emoji, sem pacote externo de ícones
+- **HomeScreen** (`screens/HomeScreen.js`) — dashboard com saudação, card de próximo lembrete (mockado), grid de acesso rápido e dica do dia aleatória
+- **SaudeScreen** (`screens/SaudeScreen.js`) — carteirinha digital com card do pet, timeline de vacinas (dados mockados: V8, Antirrábica, V8 Reforço, Vermífugo), FAB para adicionar
+- **AlimentacaoScreen** (`screens/AlimentacaoScreen.js`) — calculadora de porção por peso (cães/gatos), frequência alimentar, lista de alimentos proibidos e liberados
+- **AssistenteScreen** (`screens/AssistenteScreen.js`) — chat com respostas simuladas (sem OpenAI ainda), chips de sugestão rápida, indicador de digitação
+- **PerfilScreen** (`screens/PerfilScreen.js`) — foto/nome do pet, informações (raça/idade/peso editáveis), estatísticas (vacinas, lembretes, dias juntos), configurações do app
+
+## Próximas telas / melhorias pendentes
+- Integrar OpenAI API na `AssistenteScreen`
+- Integrar Supabase para persistir dados do pet
+- Passo 3/3 do cadastro (ex: data de nascimento ou foto)
+- Substituir dados mockados de vacinas e lembretes por dados reais
 
 ## Como o agente deve trabalhar
 
