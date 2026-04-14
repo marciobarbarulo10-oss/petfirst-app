@@ -1,20 +1,23 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import WelcomeScreen from './screens/WelcomeScreen';
+import CadastroEspecieScreen from './screens/CadastroEspecieScreen';
+import CadastroNomeScreen from './screens/CadastroNomeScreen';
+import MainTabs from './screens/MainTabs';
+
+const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <NavigationContainer>
+      {/* Stack de onboarding — Welcome → CadastroEspecie → CadastroNome → MainTabs */}
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Welcome" component={WelcomeScreen} />
+        <Stack.Screen name="CadastroEspecie" component={CadastroEspecieScreen} />
+        <Stack.Screen name="CadastroNome" component={CadastroNomeScreen} />
+        {/* MainTabs contém o bottom tab navigator com todas as telas principais */}
+        <Stack.Screen name="MainTabs" component={MainTabs} />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
