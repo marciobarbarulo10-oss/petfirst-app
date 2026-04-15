@@ -1,10 +1,19 @@
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useState } from 'react';
+import { usePetData } from '../hooks/usePetData';
 
 export default function CadastroNomeScreen({ navigation, route }) {
   const [nome, setNome] = useState('');
   const { especie } = route.params;
+  const { salvarPetData } = usePetData();
   const emojis = { cachorro: '🐕', gato: '🐈', ave: '🐦', roedor: '🐹', reptil: '🦎', peixe: '🐠' };
+
+  async function handleContinuar() {
+    if (nome.length < 2) return;
+    // Persiste nome e espécie antes de navegar para o app principal
+    await salvarPetData({ petName: nome, petEspecie: especie });
+    navigation.navigate('MainTabs', { petName: nome, petEspecie: especie });
+  }
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
@@ -32,7 +41,7 @@ export default function CadastroNomeScreen({ navigation, route }) {
         )}
         <TouchableOpacity
           style={[styles.btn, nome.length < 2 && styles.btnDesabilitado]}
-          onPress={() => nome.length >= 2 && navigation.navigate('MainTabs', { petName: nome, petEspecie: especie })}
+          onPress={handleContinuar}
         >
           <Text style={styles.btnText}>
             {nome.length >= 2 ? `Criar perfil do ${nome} 🎉` : 'Digite o nome para continuar'}

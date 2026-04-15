@@ -1,7 +1,8 @@
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
-import { useState } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
+import { useState, useEffect } from 'react';
+import { usePetData } from '../hooks/usePetData';
 
-const opcoesCofiguracao = [
+const opcoesConfiguracao = [
   { emoji: '🔔', label: 'Notificações', desc: 'Gerencie seus lembretes' },
   { emoji: '🔒', label: 'Privacidade', desc: 'Dados e permissões' },
   { emoji: 'ℹ️', label: 'Sobre o app', desc: 'Versão 1.0.0' },
@@ -9,26 +10,61 @@ const opcoesCofiguracao = [
 ];
 
 export default function PerfilScreen({ route }) {
-  const { petName, petEspecie } = route?.params || {};
+  const { petData, carregando, salvarPetData } = usePetData();
+
+  // route.params tem prioridade logo após o onboarding; AsyncStorage serve como fallback
+  const petNameInicial = route?.params?.petName || petData.petName || '';
+  const petEspecieInicial = route?.params?.petEspecie || petData.petEspecie || '';
+
   const emojis = { cachorro: '🐕', gato: '🐈', ave: '🐦', roedor: '🐹', reptil: '🦎', peixe: '🐠' };
-  const emoji = emojis[petEspecie] || '🐾';
 
   const [editando, setEditando] = useState(false);
 
+  // Campos editáveis — inicializados com os dados persistidos
+  const [raca, setRaca] = useState('');
+  const [idade, setIdade] = useState('');
+  const [peso, setPeso] = useState('');
+
+  // Atualiza os campos quando os dados do AsyncStorage terminam de carregar
+  useEffect(() => {
+    if (!carregando) {
+      setRaca(petData.raca || '');
+      setIdade(petData.idade || '');
+      setPeso(petData.peso || '');
+    }
+  }, [carregando]);
+
+  const petName = petNameInicial || petData.petName || 'Meu Pet';
+  const petEspecie = petEspecieInicial || petData.petEspecie || '';
+  const emoji = emojis[petEspecie] || '🐾';
+
   // Calcula dias juntos a partir de uma data de cadastro fictícia
   const diasJuntos = 45;
+
+  async function handleSalvar() {
+    await salvarPetData({ raca, idade, peso });
+    setEditando(false);
+  }
+
+  function handleEditar() {
+    if (editando) {
+      handleSalvar();
+    } else {
+      setEditando(true);
+    }
+  }
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header com foto e nome */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.btnEditar} onPress={() => setEditando(!editando)}>
+        <TouchableOpacity style={styles.btnEditar} onPress={handleEditar}>
           <Text style={styles.btnEditarText}>{editando ? 'Salvar' : 'Editar'}</Text>
         </TouchableOpacity>
         <View style={styles.fotoPerfil}>
           <Text style={styles.fotoEmoji}>{emoji}</Text>
         </View>
-        <Text style={styles.nomePet}>{petName || 'Meu Pet'}</Text>
+        <Text style={styles.nomePet}>{petName}</Text>
         <Text style={styles.especiePet}>
           {petEspecie ? petEspecie.charAt(0).toUpperCase() + petEspecie.slice(1) : 'Pet'}
         </Text>
@@ -38,32 +74,65 @@ export default function PerfilScreen({ route }) {
         {/* Card de informações do pet */}
         <View style={styles.card}>
           <Text style={styles.cardTitulo}>Informações do pet</Text>
+
           <View style={styles.infoLinha}>
             <Text style={styles.infoLabel}>Espécie</Text>
             <Text style={styles.infoValor}>
               {petEspecie ? petEspecie.charAt(0).toUpperCase() + petEspecie.slice(1) : '—'}
             </Text>
           </View>
+
           <View style={styles.infoLinhaSeparador} />
+
           <View style={styles.infoLinha}>
             <Text style={styles.infoLabel}>Raça</Text>
-            <Text style={[styles.infoValor, editando && styles.infoValorEditando]}>
-              {editando ? 'Toque para editar' : 'Não informada'}
-            </Text>
+            {editando ? (
+              <TextInput
+                style={styles.infoInput}
+                value={raca}
+                onChangeText={setRaca}
+                placeholder="Ex: Golden, Siamês..."
+                placeholderTextColor="#B8B0A8"
+              />
+            ) : (
+              <Text style={styles.infoValor}>{raca || 'Não informada'}</Text>
+            )}
           </View>
+
           <View style={styles.infoLinhaSeparador} />
+
           <View style={styles.infoLinha}>
             <Text style={styles.infoLabel}>Idade</Text>
-            <Text style={[styles.infoValor, editando && styles.infoValorEditando]}>
-              {editando ? 'Toque para editar' : 'Não informada'}
-            </Text>
+            {editando ? (
+              <TextInput
+                style={styles.infoInput}
+                value={idade}
+                onChangeText={setIdade}
+                placeholder="Ex: 2 anos"
+                placeholderTextColor="#B8B0A8"
+                keyboardType="default"
+              />
+            ) : (
+              <Text style={styles.infoValor}>{idade || 'Não informada'}</Text>
+            )}
           </View>
+
           <View style={styles.infoLinhaSeparador} />
+
           <View style={styles.infoLinha}>
             <Text style={styles.infoLabel}>Peso</Text>
-            <Text style={[styles.infoValor, editando && styles.infoValorEditando]}>
-              {editando ? 'Toque para editar' : 'Não informado'}
-            </Text>
+            {editando ? (
+              <TextInput
+                style={styles.infoInput}
+                value={peso}
+                onChangeText={setPeso}
+                placeholder="Ex: 4,5 kg"
+                placeholderTextColor="#B8B0A8"
+                keyboardType="decimal-pad"
+              />
+            ) : (
+              <Text style={styles.infoValor}>{peso ? `${peso} kg` : 'Não informado'}</Text>
+            )}
           </View>
         </View>
 
@@ -90,7 +159,7 @@ export default function PerfilScreen({ route }) {
         {/* Configurações */}
         <Text style={styles.secaoTitulo}>Configurações</Text>
         <View style={styles.card}>
-          {opcoesCofiguracao.map((op, index) => (
+          {opcoesConfiguracao.map((op, index) => (
             <View key={op.label}>
               <TouchableOpacity style={styles.configItem}>
                 <Text style={styles.configEmoji}>{op.emoji}</Text>
@@ -100,7 +169,7 @@ export default function PerfilScreen({ route }) {
                 </View>
                 <Text style={styles.configSeta}>›</Text>
               </TouchableOpacity>
-              {index < opcoesCofiguracao.length - 1 && (
+              {index < opcoesConfiguracao.length - 1 && (
                 <View style={styles.infoLinhaSeparador} />
               )}
             </View>
@@ -201,9 +270,16 @@ const styles = StyleSheet.create({
     color: '#4A4540',
     fontWeight: '600',
   },
-  infoValorEditando: {
+  infoInput: {
+    fontSize: 14,
     color: '#E07B5A',
-    fontStyle: 'italic',
+    fontWeight: '600',
+    textAlign: 'right',
+    minWidth: 120,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E07B5A',
+    paddingVertical: 2,
+    paddingHorizontal: 4,
   },
   secaoTitulo: {
     fontSize: 18,

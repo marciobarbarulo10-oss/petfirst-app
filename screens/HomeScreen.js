@@ -1,4 +1,6 @@
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
+import { useEffect, useState } from 'react';
+import { usePetData } from '../hooks/usePetData';
 
 // Dicas aleatórias sobre pets exibidas no card "Dica do dia"
 const dicas = [
@@ -10,13 +12,26 @@ const dicas = [
   'Peixes precisam de aquário com filtro e troca parcial de água semanalmente.',
 ];
 
-export default function HomeScreen({ route }) {
-  const { petName, petEspecie } = route.params || {};
+export default function HomeScreen({ route, navigation }) {
+  const { petData } = usePetData();
+
+  // route.params tem prioridade durante o onboarding; AsyncStorage serve como fallback
+  const petName = route.params?.petName || petData.petName || 'Meu Pet';
+  const petEspecie = route.params?.petEspecie || petData.petEspecie || '';
+
   const emojis = { cachorro: '🐕', gato: '🐈', ave: '🐦', roedor: '🐹', reptil: '🦎', peixe: '🐠' };
   const emoji = emojis[petEspecie] || '🐾';
 
   // Escolhe uma dica aleatória ao montar a tela
-  const dica = dicas[Math.floor(Math.random() * dicas.length)];
+  const [dica] = useState(() => dicas[Math.floor(Math.random() * dicas.length)]);
+
+  // Cards de acesso rápido — cada um navega para a aba correspondente
+  const cardsRapidos = [
+    { emoji: '💉', label: 'Saúde', aba: 'Saude' },
+    { emoji: '🍽️', label: 'Alimentação', aba: 'Alimentacao' },
+    { emoji: '🤖', label: 'Assistente', aba: 'Assistente' },
+    { emoji: '👤', label: 'Perfil', aba: 'Perfil' },
+  ];
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -24,7 +39,7 @@ export default function HomeScreen({ route }) {
       <View style={styles.header}>
         <View>
           <Text style={styles.headerSub}>Olá!</Text>
-          <Text style={styles.headerTitle}>{petName || 'Meu Pet'} {emoji}</Text>
+          <Text style={styles.headerTitle}>{petName} {emoji}</Text>
         </View>
         <View style={styles.avatarCircle}>
           <Text style={styles.avatarEmoji}>{emoji}</Text>
@@ -45,22 +60,16 @@ export default function HomeScreen({ route }) {
         {/* Seção acesso rápido */}
         <Text style={styles.secaoTitulo}>Acesso rápido</Text>
         <View style={styles.grid}>
-          <TouchableOpacity style={styles.gridCard}>
-            <Text style={styles.gridEmoji}>💉</Text>
-            <Text style={styles.gridLabel}>Saúde</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.gridCard}>
-            <Text style={styles.gridEmoji}>🍽️</Text>
-            <Text style={styles.gridLabel}>Alimentação</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.gridCard}>
-            <Text style={styles.gridEmoji}>🔔</Text>
-            <Text style={styles.gridLabel}>Lembretes</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.gridCard}>
-            <Text style={styles.gridEmoji}>🤖</Text>
-            <Text style={styles.gridLabel}>Assistente</Text>
-          </TouchableOpacity>
+          {cardsRapidos.map((card) => (
+            <TouchableOpacity
+              key={card.aba}
+              style={styles.gridCard}
+              onPress={() => navigation.navigate(card.aba)}
+            >
+              <Text style={styles.gridEmoji}>{card.emoji}</Text>
+              <Text style={styles.gridLabel}>{card.label}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
         {/* Dica do dia */}
