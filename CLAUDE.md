@@ -5,8 +5,11 @@ App mobile React Native com Expo para tutores de pet de primeira viagem.
 Estratégia: 100% gratuito no lançamento, monetização via assinatura depois.
 
 ## Stack técnica
-- React Native + Expo SDK 51
-- @react-navigation/native-stack v6
+- React Native 0.76.5 + Expo SDK 54
+- @react-navigation v7 (native, native-stack, bottom-tabs)
+- react-native-screens ~4.4.0
+- react-native-safe-area-context 4.14.0
+- @react-native-async-storage/async-storage 2.1.0
 - JavaScript puro — sem TypeScript
 - Supabase (banco de dados e autenticação) — ainda não configurado
 - OpenAI API (assistente IA) — ainda não configurado
@@ -104,7 +107,7 @@ Todas as telas usam `headerShown: false`. O `MainTabs` recebe `petName` e `petEs
 
 ### Pacotes novos
 - Avisar o usuário antes de instalar qualquer pacote
-- Confirmar compatibilidade com Expo SDK 51 e Expo Go
+- Confirmar compatibilidade com Expo SDK 54 e Expo Go
 - Preferir soluções sem dependências extras quando possível
 
 ### Comunicação
