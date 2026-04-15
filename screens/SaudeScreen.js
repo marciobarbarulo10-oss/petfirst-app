@@ -28,7 +28,7 @@ const vacinas = [
   },
 ];
 
-export default function SaudeScreen({ route }) {
+export default function SaudeScreen({ route, navigation }) {
   const { petName, petEspecie } = route?.params || {};
   const emojis = { cachorro: '🐕', gato: '🐈', ave: '🐦', roedor: '🐹', reptil: '🦎', peixe: '🐠' };
   const emoji = emojis[petEspecie] || '🐾';
@@ -42,7 +42,10 @@ export default function SaudeScreen({ route }) {
             <Text style={styles.headerTitulo}>Saúde</Text>
             <Text style={styles.headerSub}>Carteirinha de {petName || 'seu pet'}</Text>
           </View>
-          <TouchableOpacity style={styles.headerBtnAdd}>
+          <TouchableOpacity
+            style={styles.headerBtnAdd}
+            onPress={() => navigation.navigate('AdicionarVacina', { petName, petEspecie })}
+          >
             <Text style={styles.headerBtnAddText}>+</Text>
           </TouchableOpacity>
         </View>
@@ -114,7 +117,10 @@ export default function SaudeScreen({ route }) {
       </ScrollView>
 
       {/* FAB — botão flutuante para adicionar vacina */}
-      <TouchableOpacity style={styles.fab}>
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => navigation.navigate('AdicionarVacina', { petName, petEspecie })}
+      >
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
     </View>

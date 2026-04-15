@@ -4,6 +4,7 @@ import WelcomeScreen from './screens/WelcomeScreen';
 import CadastroEspecieScreen from './screens/CadastroEspecieScreen';
 import CadastroNomeScreen from './screens/CadastroNomeScreen';
 import MainTabs from './screens/MainTabs';
+import AdicionarVacinaScreen from './screens/AdicionarVacinaScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -17,6 +18,8 @@ export default function App() {
         <Stack.Screen name="CadastroNome" component={CadastroNomeScreen} />
         {/* MainTabs contém o bottom tab navigator com todas as telas principais */}
         <Stack.Screen name="MainTabs" component={MainTabs} />
+        {/* Telas modais/secundárias */}
+        <Stack.Screen name="AdicionarVacina" component={AdicionarVacinaScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

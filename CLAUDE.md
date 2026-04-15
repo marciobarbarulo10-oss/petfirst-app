@@ -5,11 +5,13 @@ App mobile React Native com Expo para tutores de pet de primeira viagem.
 Estratégia: 100% gratuito no lançamento, monetização via assinatura depois.
 
 ## Stack técnica
-- React Native 0.76.5 + Expo SDK 54
+- React Native 0.81.5 + Expo SDK 54
 - @react-navigation v7 (native, native-stack, bottom-tabs)
-- react-native-screens ~4.4.0
-- react-native-safe-area-context 4.14.0
-- @react-native-async-storage/async-storage 2.1.0
+- react-native-screens 4.16.0
+- react-native-safe-area-context 5.6.0
+- @react-native-async-storage/async-storage 2.2.0
+- expo-image-picker (foto do pet)
+- EAS Build configurado (eas.json)
 - JavaScript puro — sem TypeScript
 - Supabase (banco de dados e autenticação) — ainda não configurado
 - OpenAI API (assistente IA) — ainda não configurado
@@ -79,13 +81,30 @@ Todas as telas usam `headerShown: false`. O `MainTabs` recebe `petName` e `petEs
 - **SaudeScreen** (`screens/SaudeScreen.js`) — carteirinha digital com card do pet, timeline de vacinas (dados mockados: V8, Antirrábica, V8 Reforço, Vermífugo), FAB para adicionar
 - **AlimentacaoScreen** (`screens/AlimentacaoScreen.js`) — calculadora de porção por peso (cães/gatos), frequência alimentar, lista de alimentos proibidos e liberados
 - **AssistenteScreen** (`screens/AssistenteScreen.js`) — chat com respostas simuladas (sem OpenAI ainda), chips de sugestão rápida, indicador de digitação
-- **PerfilScreen** (`screens/PerfilScreen.js`) — foto/nome do pet, informações (raça/idade/peso editáveis), estatísticas (vacinas, lembretes, dias juntos), configurações do app
+- **PerfilScreen** (`screens/PerfilScreen.js`) — foto/nome do pet (com ImagePicker), informações (raça/idade/peso editáveis), estatísticas (vacinas, lembretes, dias juntos), configurações do app
+
+### Telas secundárias (Stack Navigator)
+- **AdicionarVacinaScreen** (`screens/AdicionarVacinaScreen.js`) — formulário para registrar nova vacina com tipo, data, veterinário e observações; chamada pelo FAB da SaudeScreen
+
+## EAS Build
+Configurado para gerar APK Android. Comandos:
+```bash
+# APK de preview (instalar direto no celular)
+npx eas build --platform android --profile preview
+
+# APK de desenvolvimento
+npx eas build --platform android --profile development
+
+# AAB para Play Store
+npx eas build --platform android --profile production
+```
 
 ## Próximas telas / melhorias pendentes
 - Integrar OpenAI API na `AssistenteScreen`
-- Integrar Supabase para persistir dados do pet
-- Passo 3/3 do cadastro (ex: data de nascimento ou foto)
+- Integrar Supabase para persistir vacinas e lembretes
+- Passo 3/3 do cadastro (ex: data de nascimento)
 - Substituir dados mockados de vacinas e lembretes por dados reais
+- Sincronizar vacinas adicionadas com a lista na SaudeScreen
 
 ## Como o agente deve trabalhar
 

@@ -1,5 +1,6 @@
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, Image } from 'react-native';
 import { useState, useEffect } from 'react';
+import * as ImagePicker from 'expo-image-picker';
 import { usePetData } from '../hooks/usePetData';
 
 const opcoesConfiguracao = [
@@ -24,6 +25,7 @@ export default function PerfilScreen({ route }) {
   const [raca, setRaca] = useState('');
   const [idade, setIdade] = useState('');
   const [peso, setPeso] = useState('');
+  const [foto, setFoto] = useState(null);
 
   // Atualiza os campos quando os dados do AsyncStorage terminam de carregar
   useEffect(() => {
@@ -31,8 +33,72 @@ export default function PerfilScreen({ route }) {
       setRaca(petData.raca || '');
       setIdade(petData.idade || '');
       setPeso(petData.peso || '');
+      setFoto(petData.foto || null);
     }
   }, [carregando]);
+
+  // Abre opções para escolher foto (câmera ou galeria)
+  async function handleSelecionarFoto() {
+    Alert.alert(
+      'Foto do pet',
+      'Como você quer adicionar a foto?',
+      [
+        {
+          text: 'Tirar foto',
+          onPress: abrirCamera,
+        },
+        {
+          text: 'Escolher da galeria',
+          onPress: abrirGaleria,
+        },
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+      ]
+    );
+  }
+
+  async function abrirCamera() {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permissão necessária', 'Precisamos de acesso à câmera para tirar a foto.');
+      return;
+    }
+
+    const resultado = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!resultado.canceled && resultado.assets && resultado.assets[0]) {
+      const novaFoto = resultado.assets[0].uri;
+      setFoto(novaFoto);
+      await salvarPetData({ foto: novaFoto });
+    }
+  }
+
+  async function abrirGaleria() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permissão necessária', 'Precisamos de acesso às suas fotos.');
+      return;
+    }
+
+    const resultado = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!resultado.canceled && resultado.assets && resultado.assets[0]) {
+      const novaFoto = resultado.assets[0].uri;
+      setFoto(novaFoto);
+      await salvarPetData({ foto: novaFoto });
+    }
+  }
 
   const petName = petNameInicial || petData.petName || 'Meu Pet';
   const petEspecie = petEspecieInicial || petData.petEspecie || '';
@@ -61,9 +127,16 @@ export default function PerfilScreen({ route }) {
         <TouchableOpacity style={styles.btnEditar} onPress={handleEditar}>
           <Text style={styles.btnEditarText}>{editando ? 'Salvar' : 'Editar'}</Text>
         </TouchableOpacity>
-        <View style={styles.fotoPerfil}>
-          <Text style={styles.fotoEmoji}>{emoji}</Text>
-        </View>
+        <TouchableOpacity style={styles.fotoPerfil} onPress={handleSelecionarFoto}>
+          {foto ? (
+            <Image source={{ uri: foto }} style={styles.fotoImagem} />
+          ) : (
+            <Text style={styles.fotoEmoji}>{emoji}</Text>
+          )}
+          <View style={styles.fotoIconeEditar}>
+            <Text style={styles.fotoIconeEditarText}>📷</Text>
+          </View>
+        </TouchableOpacity>
         <Text style={styles.nomePet}>{petName}</Text>
         <Text style={styles.especiePet}>
           {petEspecie ? petEspecie.charAt(0).toUpperCase() + petEspecie.slice(1) : 'Pet'}
@@ -219,9 +292,31 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: '#E07B5A',
     marginBottom: 14,
+    overflow: 'hidden',
   },
   fotoEmoji: {
     fontSize: 52,
+  },
+  fotoImagem: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+  },
+  fotoIconeEditar: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#E07B5A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#4A4540',
+  },
+  fotoIconeEditarText: {
+    fontSize: 14,
   },
   nomePet: {
     fontSize: 26,

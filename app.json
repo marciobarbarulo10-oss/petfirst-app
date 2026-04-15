@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "petfirst",
+    "name": "PetFirst",
     "slug": "petfirst",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -10,20 +10,46 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#FFFDF9"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.petfirst.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "O PetFirst precisa de acesso à câmera para você tirar fotos do seu pet.",
+        "NSPhotoLibraryUsageDescription": "O PetFirst precisa de acesso às suas fotos para você escolher uma foto do seu pet."
+      }
     },
     "android": {
+      "package": "com.petfirst.app",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#FFFDF9"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O PetFirst precisa de acesso às suas fotos para você escolher uma foto do seu pet.",
+          "cameraPermission": "O PetFirst precisa de acesso à câmera para você tirar fotos do seu pet."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "petfirst-app"
+      }
     }
   }
 }
