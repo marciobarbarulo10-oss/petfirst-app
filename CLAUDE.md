@@ -10,10 +10,10 @@ Estratégia: 100% gratuito no lançamento, monetização via assinatura depois.
 - react-native-screens 4.16.0
 - react-native-safe-area-context 5.6.0
 - @react-native-async-storage/async-storage 2.2.0
+- @supabase/supabase-js 2.103.3 (banco de dados e autenticação)
 - expo-image-picker (foto do pet)
 - EAS Build configurado (eas.json)
 - JavaScript puro — sem TypeScript
-- Supabase (banco de dados e autenticação) — ainda não configurado
 - OpenAI API (assistente IA) — ainda não configurado
 
 ## Identidade visual
@@ -56,6 +56,9 @@ Estratégia: 100% gratuito no lançamento, monetização via assinatura depois.
 ## Estrutura de pastas
 /screens      — telas do app (uma por arquivo)
 /components   — componentes reutilizáveis
+/contexts     — contextos React (PetContext)
+/hooks        — hooks customizados (usePetData)
+/lib          — integrações externas (supabase.js, database.sql)
 /assets       — imagens e ícones
 
 ## Estado atual do navegador (App.js)
@@ -78,13 +81,13 @@ Todas as telas usam `headerShown: false`. O `MainTabs` recebe `petName` e `petEs
 ### Navegação principal (Bottom Tab Navigator)
 - **MainTabs** (`screens/MainTabs.js`) — bottom tab navigator com 5 abas; ícones em emoji, sem pacote externo de ícones
 - **HomeScreen** (`screens/HomeScreen.js`) — dashboard com saudação, card de próximo lembrete (mockado), grid de acesso rápido e dica do dia aleatória
-- **SaudeScreen** (`screens/SaudeScreen.js`) — carteirinha digital com card do pet, timeline de vacinas (dados mockados: V8, Antirrábica, V8 Reforço, Vermífugo), FAB para adicionar
+- **SaudeScreen** (`screens/SaudeScreen.js`) — carteirinha digital com card do pet, timeline de vacinas (dados do Supabase + cache local), pull-to-refresh, FAB para adicionar, indicadores offline/loading
 - **AlimentacaoScreen** (`screens/AlimentacaoScreen.js`) — calculadora de porção por peso (cães/gatos), frequência alimentar, lista de alimentos proibidos e liberados
 - **AssistenteScreen** (`screens/AssistenteScreen.js`) — chat com respostas simuladas (sem OpenAI ainda), chips de sugestão rápida, indicador de digitação
 - **PerfilScreen** (`screens/PerfilScreen.js`) — foto/nome do pet (com ImagePicker), informações (raça/idade/peso editáveis), estatísticas (vacinas, lembretes, dias juntos), configurações do app
 
 ### Telas secundárias (Stack Navigator)
-- **AdicionarVacinaScreen** (`screens/AdicionarVacinaScreen.js`) — formulário para registrar nova vacina com tipo, data, veterinário e observações; chamada pelo FAB da SaudeScreen
+- **AdicionarVacinaScreen** (`screens/AdicionarVacinaScreen.js`) — formulário para registrar nova vacina com tipo, data, veterinário e observações; salva no Supabase com fallback offline; loading states
 
 ## EAS Build
 Configurado para gerar APK Android. Comandos:
@@ -99,12 +102,28 @@ npx eas build --platform android --profile development
 npx eas build --platform android --profile production
 ```
 
+## Integração Supabase (configurado)
+- **lib/supabase.js** — cliente Supabase + funções CRUD para pets, vacinas e lembretes
+- **lib/database.sql** — schema SQL para criar as tabelas no Supabase (pets, vaccines, reminders)
+- **contexts/PetContext.js** — contexto global do pet com suporte offline
+- **hooks/usePetData.js** — hook para dados do pet com Supabase + AsyncStorage fallback
+
+### Credenciais Supabase
+- URL: https://fhaiueghkjlikiidvtps.supabase.co
+- Key: sb_publishable_hLPMVJtCrcAqGV8YXj1pZw_bjPyBf7Q
+
+### Para configurar o banco
+1. Acessar o painel do Supabase
+2. Ir em SQL Editor
+3. Executar o conteúdo de `lib/database.sql`
+4. Habilitar autenticação (opcional: Google OAuth)
+
 ## Próximas telas / melhorias pendentes
 - Integrar OpenAI API na `AssistenteScreen`
-- Integrar Supabase para persistir vacinas e lembretes
+- Implementar autenticação de usuários (login/cadastro)
 - Passo 3/3 do cadastro (ex: data de nascimento)
-- Substituir dados mockados de vacinas e lembretes por dados reais
-- Sincronizar vacinas adicionadas com a lista na SaudeScreen
+- Criar tela de lembretes com CRUD completo
+- Implementar notificações push para lembretes
 
 ## Como o agente deve trabalhar
 

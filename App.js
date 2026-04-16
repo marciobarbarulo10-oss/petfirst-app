@@ -1,5 +1,6 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { PetProvider } from './contexts/PetContext';
 import WelcomeScreen from './screens/WelcomeScreen';
 import CadastroEspecieScreen from './screens/CadastroEspecieScreen';
 import CadastroNomeScreen from './screens/CadastroNomeScreen';
@@ -10,7 +11,8 @@ const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    <NavigationContainer>
+    <PetProvider>
+      <NavigationContainer>
       {/* Stack de onboarding — Welcome → CadastroEspecie → CadastroNome → MainTabs */}
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Welcome" component={WelcomeScreen} />
@@ -22,5 +24,6 @@ export default function App() {
         <Stack.Screen name="AdicionarVacina" component={AdicionarVacinaScreen} />
       </Stack.Navigator>
     </NavigationContainer>
+    </PetProvider>
   );
 }

@@ -6,8 +6,14 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  Platform,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { adicionarVacina, verificarConexao } from '../lib/supabase';
+
+// Chave para cache local de vacinas
+const VACINAS_STORAGE_KEY = '@petfirst:vacinas';
 
 // Tipos de vacina pré-definidos para facilitar o cadastro
 const tiposVacina = [
@@ -21,7 +27,7 @@ const tiposVacina = [
 ];
 
 export default function AdicionarVacinaScreen({ navigation, route }) {
-  const { petName } = route?.params || {};
+  const { petName, petId } = route?.params || {};
 
   const [tipoSelecionado, setTipoSelecionado] = useState(null);
   const [nomeCustomizado, setNomeCustomizado] = useState('');
@@ -29,6 +35,8 @@ export default function AdicionarVacinaScreen({ navigation, route }) {
   const [veterinario, setVeterinario] = useState('');
   const [observacoes, setObservacoes] = useState('');
   const [status, setStatus] = useState('aplicada'); // 'aplicada' ou 'proxima'
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState(null);
 
   // Formata a data enquanto digita (DD/MM/AAAA)
   const formatarData = (texto) => {
@@ -42,29 +50,119 @@ export default function AdicionarVacinaScreen({ navigation, route }) {
     setData(formatarData(texto));
   };
 
-  const podeEnviar = tipoSelecionado && data.length === 10;
+  // Converte data de DD/MM/AAAA para YYYY-MM-DD
+  const formatarDataParaServidor = (dataStr) => {
+    const partes = dataStr.split('/');
+    if (partes.length === 3) {
+      return `${partes[2]}-${partes[1]}-${partes[0]}`;
+    }
+    return dataStr;
+  };
 
-  const handleSalvar = () => {
+  // Valida se a data é válida
+  const validarData = (dataStr) => {
+    if (dataStr.length !== 10) return false;
+    const partes = dataStr.split('/');
+    if (partes.length !== 3) return false;
+
+    const dia = parseInt(partes[0], 10);
+    const mes = parseInt(partes[1], 10);
+    const ano = parseInt(partes[2], 10);
+
+    if (isNaN(dia) || isNaN(mes) || isNaN(ano)) return false;
+    if (dia < 1 || dia > 31) return false;
+    if (mes < 1 || mes > 12) return false;
+    if (ano < 2000 || ano > 2100) return false;
+
+    return true;
+  };
+
+  const podeEnviar = tipoSelecionado && validarData(data) && (tipoSelecionado !== 'outra' || nomeCustomizado.trim());
+
+  const handleSalvar = async () => {
+    if (!podeEnviar) return;
+
+    setSalvando(true);
+    setErro(null);
+
+    const nomeVacina = tipoSelecionado === 'outra'
+      ? nomeCustomizado.trim()
+      : tiposVacina.find(t => t.id === tipoSelecionado)?.nome;
+
     const novaVacina = {
-      id: Date.now(),
-      nome: tipoSelecionado === 'outra' ? nomeCustomizado : tiposVacina.find(t => t.id === tipoSelecionado)?.nome,
+      id: `local_${Date.now()}`,
+      nome: nomeVacina,
       status,
       data,
-      veterinario,
-      observacoes,
+      clinica: veterinario.trim() || null,
+      observacoes: observacoes.trim() || null,
     };
 
-    // Por enquanto volta para a tela anterior
-    // Futuramente salvará no Supabase
-    console.log('Vacina adicionada:', novaVacina);
-    navigation.goBack();
+    try {
+      // 1. Salva no cache local primeiro (resposta rápida)
+      const vacinasJson = await AsyncStorage.getItem(VACINAS_STORAGE_KEY);
+      const vacinas = vacinasJson ? JSON.parse(vacinasJson) : [];
+      const novasVacinas = [novaVacina, ...vacinas];
+      await AsyncStorage.setItem(VACINAS_STORAGE_KEY, JSON.stringify(novasVacinas));
+
+      // 2. Tenta salvar no Supabase se estiver online e tiver petId
+      const conectado = await verificarConexao();
+
+      if (conectado && petId) {
+        const vacinaParaServidor = {
+          pet_id: petId,
+          nome: nomeVacina,
+          data_aplicacao: formatarDataParaServidor(data),
+          status,
+          clinica: veterinario.trim() || null,
+          observacoes: observacoes.trim() || null,
+        };
+
+        const { data: vacinaSalva, error } = await adicionarVacina(vacinaParaServidor);
+
+        if (error) {
+          console.warn('Erro ao salvar no servidor:', error);
+          // Não impede a navegação - dados salvos localmente
+          mostrarSucessoOffline();
+        } else if (vacinaSalva) {
+          // Atualiza o cache com o ID real do servidor
+          const vacinasAtualizadas = novasVacinas.map(v =>
+            v.id === novaVacina.id
+              ? { ...v, id: vacinaSalva.id }
+              : v
+          );
+          await AsyncStorage.setItem(VACINAS_STORAGE_KEY, JSON.stringify(vacinasAtualizadas));
+        }
+      } else if (!conectado) {
+        mostrarSucessoOffline();
+      }
+
+      navigation.goBack();
+    } catch (error) {
+      console.error('Erro ao salvar vacina:', error);
+      setErro('Não foi possível salvar a vacina. Tente novamente.');
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const mostrarSucessoOffline = () => {
+    Alert.alert(
+      'Salvo localmente',
+      'A vacina foi salva no seu dispositivo e será sincronizada quando houver conexão.',
+      [{ text: 'OK' }]
+    );
   };
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.btnVoltar}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.btnVoltar}
+          disabled={salvando}
+        >
           <Text style={styles.btnVoltarText}>←</Text>
         </TouchableOpacity>
         <View style={styles.headerCenter}>
@@ -75,20 +173,30 @@ export default function AdicionarVacinaScreen({ navigation, route }) {
       </View>
 
       <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
+        {/* Banner de erro */}
+        {erro && (
+          <TouchableOpacity style={styles.erroBanner} onPress={() => setErro(null)}>
+            <Text style={styles.erroText}>⚠️ {erro}</Text>
+            <Text style={styles.erroTextSub}>Toque para fechar</Text>
+          </TouchableOpacity>
+        )}
+
         {/* Status da vacina */}
         <Text style={styles.label}>Status</Text>
         <View style={styles.statusContainer}>
           <TouchableOpacity
             style={[styles.statusBtn, status === 'aplicada' && styles.statusBtnAtivo]}
             onPress={() => setStatus('aplicada')}
+            disabled={salvando}
           >
             <Text style={[styles.statusBtnText, status === 'aplicada' && styles.statusBtnTextAtivo]}>
               ✓ Já aplicada
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.statusBtn, status === 'proxima' && styles.statusBtnProxima]}
+            style={[styles.statusBtn, styles.statusBtnDireito, status === 'proxima' && styles.statusBtnProxima]}
             onPress={() => setStatus('proxima')}
+            disabled={salvando}
           >
             <Text style={[styles.statusBtnText, status === 'proxima' && styles.statusBtnTextProxima]}>
               📅 Agendar
@@ -107,6 +215,7 @@ export default function AdicionarVacinaScreen({ navigation, route }) {
                 tipoSelecionado === tipo.id && styles.tipoBtnSelecionado,
               ]}
               onPress={() => setTipoSelecionado(tipo.id)}
+              disabled={salvando}
             >
               <Text style={[
                 styles.tipoBtnText,
@@ -128,6 +237,7 @@ export default function AdicionarVacinaScreen({ navigation, route }) {
               placeholderTextColor="#B8B0A8"
               value={nomeCustomizado}
               onChangeText={setNomeCustomizado}
+              editable={!salvando}
             />
           </>
         )}
@@ -144,6 +254,7 @@ export default function AdicionarVacinaScreen({ navigation, route }) {
           onChangeText={handleDataChange}
           keyboardType="numeric"
           maxLength={10}
+          editable={!salvando}
         />
 
         {/* Veterinário (opcional) */}
@@ -154,6 +265,7 @@ export default function AdicionarVacinaScreen({ navigation, route }) {
           placeholderTextColor="#B8B0A8"
           value={veterinario}
           onChangeText={setVeterinario}
+          editable={!salvando}
         />
 
         {/* Observações (opcional) */}
@@ -167,6 +279,7 @@ export default function AdicionarVacinaScreen({ navigation, route }) {
           multiline
           numberOfLines={3}
           textAlignVertical="top"
+          editable={!salvando}
         />
 
         {/* Espaço para o botão não sobrepor */}
@@ -176,11 +289,18 @@ export default function AdicionarVacinaScreen({ navigation, route }) {
       {/* Botão salvar fixo no rodapé */}
       <View style={styles.footer}>
         <TouchableOpacity
-          style={[styles.btnSalvar, !podeEnviar && styles.btnSalvarDesabilitado]}
+          style={[styles.btnSalvar, (!podeEnviar || salvando) && styles.btnSalvarDesabilitado]}
           onPress={handleSalvar}
-          disabled={!podeEnviar}
+          disabled={!podeEnviar || salvando}
         >
-          <Text style={styles.btnSalvarText}>Salvar vacina</Text>
+          {salvando ? (
+            <View style={styles.btnSalvarConteudo}>
+              <ActivityIndicator size="small" color="#fff" />
+              <Text style={styles.btnSalvarTextSalvando}>Salvando...</Text>
+            </View>
+          ) : (
+            <Text style={styles.btnSalvarText}>Salvar vacina</Text>
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -234,6 +354,24 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 24,
   },
+  erroBanner: {
+    backgroundColor: '#FFE5E0',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E07B5A',
+  },
+  erroText: {
+    fontSize: 13,
+    color: '#C23D1E',
+    fontWeight: '600',
+  },
+  erroTextSub: {
+    fontSize: 11,
+    color: '#C23D1E',
+    marginTop: 4,
+  },
   label: {
     fontSize: 14,
     fontWeight: '700',
@@ -254,6 +392,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
+  statusBtnDireito: {
+    marginRight: 0,
+  },
   statusBtnAtivo: {
     borderColor: '#7BAE8A',
     backgroundColor: 'rgba(123,174,138,0.1)',
@@ -261,7 +402,6 @@ const styles = StyleSheet.create({
   statusBtnProxima: {
     borderColor: '#E07B5A',
     backgroundColor: 'rgba(224,123,90,0.1)',
-    marginRight: 0,
   },
   statusBtnText: {
     fontSize: 14,
@@ -339,9 +479,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#D3D1C7',
     shadowOpacity: 0,
   },
+  btnSalvarConteudo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   btnSalvarText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
+  },
+  btnSalvarTextSalvando: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+    marginLeft: 8,
   },
 });
