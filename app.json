@@ -29,9 +29,10 @@
       },
       "edgeToEdgeEnabled": true,
       "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -48,8 +49,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "petfirst-app"
+        "projectId": "1af577b7-4234-4b77-8073-47e2da9574ee"
       }
-    }
+    },
+    "owner": "misaebarbarulo"
   }
 }
